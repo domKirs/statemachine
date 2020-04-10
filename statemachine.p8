@@ -23,6 +23,7 @@ function Standing_State:handle_input(heroine, input)
         heroine.state:enter()
     elseif input == PRESS_DOWN then
         heroine.state = Heroine_States.ducking_state
+        heroine.state:enter()
         heroine.w = heroine.ducking_w
         heroine.h = heroine.ducking_h
     end
