@@ -4,20 +4,23 @@ __lua__
 
 local PRESS_UP, PRESS_DOWN, PRESS_X, NO_INPUT = 2, 3, 5, 666
 
-local Standing_State, Jumping_State, Ducking_State = {}, {}, {} -- heroine's state pattern 
+local Standing_State, 
+      Falling_State, 
+      Jumping_State, 
+      Ducking_State = {}, {}, {}, {} -- heroine's state pattern 
 
 local Heroine_States = {} -- object pool for heroine's states
 
 Standing_State.__index = Standing_State
 
 function Standing_State:new()
-    return setmetatable({}, self)
+    return setmetatable({state = "standing"}, self)
 end
 
 function Standing_State:handle_input(heroine, input)
     if input == PRESS_X then
         heroine.state = Heroine_States.jumping_state
-        heroine.state:init()
+        heroine.state:enter()
     elseif input == PRESS_DOWN then
         heroine.state = Heroine_States.ducking_state
         heroine.w = heroine.ducking_w
@@ -29,18 +32,18 @@ function Standing_State:update(heroine)
 
 end
 
-function Standing_State:init()
+function Standing_State:enter()
 
 end
 
 Jumping_State.__index = Jumping_State
 
 function Jumping_State:new()
-    local o = setmetatable({}, self)
+    local o = setmetatable({state = "jumping"}, self)
     o.initial_v = -1
     o.max_fall = 2
-    o.g_acc = 0.03125
-    o.g_dcc = 0.125
+    o.g_acc = 0.03125 -- go up in 32 frames
+    o.g_dcc = 0.125 -- go down in 16 frames
     return o
 end
 
@@ -54,30 +57,58 @@ function Jumping_State:handle_input(heroine, input)
     if input == PRESS_X then
         
     end
-
 end
 
 function Jumping_State:update(heroine)
-    self.initial_v = (self.initial_v < 0) and 
-             self.initial_v + self.g_acc or 
-             min(self.initial_v + self.g_dcc, self.max_fall)
-    heroine.y += self.initial_v 
+    if self.initial_v < 0 then
+        self.initial_v += self.g_acc 
+        heroine.y += self.initial_v 
+    end
+
+    if self.initial_v >= 0 then
+        heroine.state = Heroine_States.falling_state
+        heroine.state:enter()
+    end
+end
+
+function Jumping_State:enter()
+    self.initial_v = -1 
+end
+
+Falling_State.__index = Falling_State
+
+function Falling_State:new()
+    local o = setmetatable({state = "falling"}, self)
+    o.max_fall = 2
+    o.initial_v = 0
+    o.g_dcc = 0.125 -- go down in 16 frames
+
+    return o
+end
+
+function Falling_State:handle_input(heroine, input)
+
+end
+
+function Falling_State:update(heroine)
+    self.initial_v = min(self.initial_v + self.g_dcc, self.max_fall)
+    heroine.y += self.initial_v
 
     if heroine.y > 64 then 
         heroine.y = 64 
         heroine.state = Heroine_States.standing_state
+        heroine.state:enter()
     end
-
 end
 
-function Jumping_State:init()
-    self.initial_v = -1
+function Falling_State:enter()
+    self.initial_v = 0
 end
 
 Ducking_State.__index = Ducking_State
 
 function Ducking_State:new()
-    return setmetatable({}, self)
+    return setmetatable({state = "ducking"}, self)
 end
 
 function Ducking_State:handle_input(heroine, input)
@@ -92,12 +123,13 @@ function Ducking_State:update(heroine)
 
 end
 
-function Ducking_State:init()
+function Ducking_State:enter()
 
 end
 
 Heroine_States.standing_state = Standing_State:new()
 Heroine_States.jumping_state = Jumping_State:new()
+Heroine_States.falling_state = Falling_State:new()
 Heroine_States.ducking_state = Ducking_State:new()
 
 local Heroine = {}
@@ -152,6 +184,7 @@ function _draw()
     rectfill(50, 48, 100, 75, 14)
     heroine:draw()
     rectfill(50, 73, 100, 75, 3)
+    print(heroine.state.state)
 end
 
 
