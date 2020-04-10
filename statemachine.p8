@@ -41,9 +41,7 @@ Jumping_State.__index = Jumping_State
 function Jumping_State:new()
     local o = setmetatable({state = "jumping"}, self)
     o.initial_v = -1
-    o.max_fall = 2
     o.g_acc = 0.03125 -- go up in 32 frames
-    o.g_dcc = 0.125 -- go down in 16 frames
     return o
 end
 
@@ -79,10 +77,9 @@ Falling_State.__index = Falling_State
 
 function Falling_State:new()
     local o = setmetatable({state = "falling"}, self)
-    o.max_fall = 2
     o.initial_v = 0
+    o.max_fall = 2
     o.g_dcc = 0.125 -- go down in 16 frames
-
     return o
 end
 
@@ -144,7 +141,6 @@ function Heroine:new(x, y)
     o.ducking_w, o.ducking_h = 12, 4
     o.jumping_w, o.jumping_h = 6, 10 
     o.c = 9
-
     return o
 end
 
