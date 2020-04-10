@@ -81,20 +81,31 @@ function Falling_State:new()
     o.initial_v = 0
     o.max_fall = 2
     o.g_dcc = 0.125 -- go down in 16 frames
+    o.j_buffer = 0
     return o
 end
 
 function Falling_State:handle_input(heroine, input)
-
+    if input == PRESS_X then
+        self.j_buffer = 8
+    end
 end
 
 function Falling_State:update(heroine)
     self.initial_v = min(self.initial_v + self.g_dcc, self.max_fall)
     heroine.y += self.initial_v
 
+    if self.j_buffer > 0 then
+        self.j_buffer -= 1
+    end
+
     if heroine.y > 64 then 
         heroine.y = 64 
-        heroine.state = Heroine_States.standing_state
+        if self.j_buffer > 0 then
+            heroine.state = Heroine_States.jumping_state
+        else
+            heroine.state = Heroine_States.standing_state
+        end
         heroine.state:enter()
     end
 end
