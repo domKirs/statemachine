@@ -38,7 +38,9 @@ Jumping_State.__index = Jumping_State
 function Jumping_State:new()
     local o = setmetatable({}, self)
     o.initial_v = -1
-    o.g = 0.03125
+    o.max_fall = 2
+    o.g_acc = 0.03125
+    o.g_dcc = 0.125
     return o
 end
 
@@ -56,7 +58,9 @@ function Jumping_State:handle_input(heroine, input)
 end
 
 function Jumping_State:update(heroine)
-    self.initial_v += self.g 
+    self.initial_v = (self.initial_v < 0) and 
+             self.initial_v + self.g_acc or 
+             min(self.initial_v + self.g_dcc, self.max_fall)
     heroine.y += self.initial_v 
 
     if heroine.y > 64 then 
@@ -148,7 +152,6 @@ function _draw()
     rectfill(50, 48, 100, 75, 14)
     heroine:draw()
     rectfill(50, 73, 100, 75, 3)
-
 end
 
 
