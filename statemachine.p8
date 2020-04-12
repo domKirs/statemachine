@@ -2,7 +2,13 @@ pico-8 cartridge // http://www.pico-8.com
 version 18
 __lua__
 
-local PRESS_LEFT, PRESS_UP, PRESS_DOWN, PRESS_X, NO_INPUT = 0, 2, 3, 5, 666
+local PRESS_LEFT, 
+      PRESS_RIGHT, 
+      PRESS_UP, 
+      PRESS_DOWN, 
+      PRESS_C,
+      PRESS_X,
+      NO_INPUT = 0, 1, 2, 3, 4, 5, 666
 
 local Standing_State,
       Running_State,
@@ -21,15 +27,15 @@ end
 function Standing_State:handle_input(heroine, input)
     if input == PRESS_X then
         heroine.state = Heroine_States.jumping_state
-        heroine.state:enter()
+        heroine.state:enter(input)
     elseif input == PRESS_DOWN then
         heroine.state = Heroine_States.ducking_state
-        heroine.state:enter()
+        heroine.state:enter(input)
         heroine.w = heroine.ducking_w
         heroine.h = heroine.ducking_h
-    elseif input == PRESS_LEFT then
+    elseif input == PRESS_LEFT or input == PRESS_RIGHT then
         heroine.state = Heroine_States.running_state
-        heroine.state:enter()
+        heroine.state:enter(input)
     end
 end
 
@@ -37,7 +43,7 @@ function Standing_State:update(heroine)
 
 end
 
-function Standing_State:enter()
+function Standing_State:enter(input)
 
 end
 
@@ -50,16 +56,20 @@ function Running_State:new()
     o.decel = 0.08 -- stop from max speed within 16 frames
     o.max_spd = 1.28 
     o.is_running = false
+    o.dir = nil -- left
     return o
 end
 
 function Running_State:handle_input(heroine, input)
     if input == PRESS_X then
         heroine.state = Heroine_States.jumping_state
-        heroine.state:enter()
-        return
+        heroine.state:enter(input)
     elseif input == PRESS_LEFT then 
-        self.is_running = true 
+        self.is_running = true
+        self.dir = -1
+    elseif input == PRESS_RIGHT then 
+        self.is_running  = true
+        self.dir = 1
     elseif input == NO_INPUT then 
         self.is_running = false
     end
@@ -77,22 +87,27 @@ function Running_State:update(heroine)
 
     if self.initial_v < 0 then
         heroine.state = Heroine_States.standing_state
-        heroine.state:enter()
+        heroine.state:enter(input)
     end
 
 
-    heroine.x += -self.initial_v
+    heroine.x += self.initial_v * self.dir 
     
     -- if heroine.x < 48 then
     --     heroine.x = 48
     --     heroine.state = Heroine_States.standing_state
-    --     heroine.state:enter()
+    --     heroine.state:enter(input)
     -- end
 end
 
-function Running_State:enter()
+function Running_State:enter(input)
     self.initial_v = 0
     self.is_running = true
+    if input == PRESS_LEFT then 
+        self.dir = -1
+    elseif input == PRESS_RIGHT then 
+        self.dir = 1 
+    end
 end
 
 Jumping_State.__index = Jumping_State
@@ -124,11 +139,11 @@ function Jumping_State:update(heroine)
 
     if self.initial_v >= 0 then
         heroine.state = Heroine_States.falling_state
-        heroine.state:enter()
+        heroine.state:enter(input)
     end
 end
 
-function Jumping_State:enter()
+function Jumping_State:enter(input)
     self.initial_v = -1 
 end
 
@@ -160,11 +175,11 @@ function Falling_State:update(heroine)
         else
             heroine.state = Heroine_States.standing_state
         end
-        heroine.state:enter()
+        heroine.state:enter(input)
     end
 end
 
-function Falling_State:enter()
+function Falling_State:enter(input)
     self.initial_v = 0
 end
 
@@ -186,7 +201,7 @@ function Ducking_State:update(heroine)
 
 end
 
-function Ducking_State:enter()
+function Ducking_State:enter(input)
 
 end
 
@@ -228,22 +243,19 @@ function _init()
     heroine = Heroine:new(64, 64)
 end
 
-local button = "no input"
-
 function _update60()
     if btn(PRESS_LEFT) then
-        button = "press left"
         heroine:handle_input(PRESS_LEFT)
+    elseif btn(PRESS_RIGHT) then
+        heroine:handle_input(PRESS_RIGHT)
     elseif btn(PRESS_UP) then 
         heroine:handle_input(PRESS_UP)
     elseif btn(PRESS_DOWN) then
         heroine:handle_input(PRESS_DOWN)
     else
-        button = "no input"
         heroine:handle_input(NO_INPUT)
     end
     if btn(PRESS_X) then
-        button = "press x"
         heroine:handle_input(PRESS_X)
     end
 
@@ -256,7 +268,6 @@ function _draw()
     heroine:draw()
     rectfill(48, 73, 100, 75, 3)
     print("state: " .. heroine.state.state)
-    print("button: " .. button)
 end
 
 
