@@ -54,10 +54,14 @@ function Running_State:new()
 end
 
 function Running_State:handle_input(heroine, input)
-    if input == PRESS_LEFT then 
+    if input == PRESS_X then
+        heroine.state = Heroine_States.jumping_state
+        heroine.state:enter()
+        return
+    elseif input == PRESS_LEFT then 
         self.is_running = true 
     elseif input == NO_INPUT then 
-        self.is_running = false 
+        self.is_running = false
     end
 end
 
@@ -224,17 +228,23 @@ function _init()
     heroine = Heroine:new(64, 64)
 end
 
+local button = "no input"
+
 function _update60()
     if btn(PRESS_LEFT) then
+        button = "press left"
         heroine:handle_input(PRESS_LEFT)
     elseif btn(PRESS_UP) then 
         heroine:handle_input(PRESS_UP)
     elseif btn(PRESS_DOWN) then
         heroine:handle_input(PRESS_DOWN)
-    elseif btn(PRESS_X) then
-        heroine:handle_input(PRESS_X)
     else
+        button = "no input"
         heroine:handle_input(NO_INPUT)
+    end
+    if btn(PRESS_X) then
+        button = "press x"
+        heroine:handle_input(PRESS_X)
     end
 
     heroine:update()
@@ -246,6 +256,7 @@ function _draw()
     heroine:draw()
     rectfill(48, 73, 100, 75, 3)
     print("state: " .. heroine.state.state)
+    print("button: " .. button)
 end
 
 
